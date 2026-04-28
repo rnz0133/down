@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Video Downloader – TikTok & Douyin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --white: #ffffff;
+      --blue: #0a7fd4;
+      --blue2: #0560a8;
+      --teal: #00bfa5;
+      --text: #0a1e30;
+      --muted: #4a7a9b;
+      --border: #d4e8f5;
+      --light: #eaf5fc;
+    }
+
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: #ffffff;
+      border-bottom: 1.5px solid var(--border);
+      padding: 52px 20px 44px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .platform-tags {
+      display: flex;
+      gap: 7px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 4px 11px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+    .tag-tt { background: #111; color: #fff; }
+    .tag-dy { background: linear-gradient(90deg, #fe2c55, #25f4ee); color: #fff; }
+
+    .hero-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .hero-title span { color: var(--blue); }
+
+    .hero-sub {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    .input-wrap {
+      width: 100%;
+      max-width: 620px;
+      display: flex;
+      align-items: stretch;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-wrap:focus-within {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(10,127,212,0.16);
+    }
+
+    #urlInput {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      outline: none;
+      padding: 13px 16px;
+      font-family: 'Be Vietnam Pro', sans-serif;
+      font-size: 0.92rem;
+      color: var(--text);
+      background: var(--light);
+    }
+    #urlInput::placeholder { color: var(--muted); }
+
+    #fetchBtn {
+      flex-shrink: 0;
+      border: none;
+      border-left: 2px solid var(--border);
+      background: var(--blue);
+      color: #fff;
+      padding: 0 22px;
+      font-family: 'Be Vietnam Pro', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      transition: background 0.18s;
+      min-height: 48px;
+    }
+    #fetchBtn:hover { background: var(--blue2); }
+    #fetchBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-spinner {
+      width: 15px; height: 15px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hint {
+      font-size: 0.775rem;
+      color: var(--muted);
+      margin-top: 12px;
+      text-align: center;
+    }
+    .hint b { color: var(--blue); font-weight: 700; }
+
+    /* ── MAIN ── */
+    .main {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 28px 20px 0;
+      width: 100%;
+      flex: 1;
+    }
+
+    .error-box {
+      background: #fff0f0;
+      border: 1.5px solid #f9a8a8;
+      border-radius: 6px;
+      padding: 12px 16px;
+      color: #b91c1c;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: none;
+      margin-bottom: 20px;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 52px 24px 40px;
+      color: var(--muted);
+      text-align: center;
+    }
+    .empty-icon-wrap {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: var(--light);
+      border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 18px;
+    }
+    .empty-icon-wrap svg {
+      width: 32px; height: 32px;
+      stroke: var(--blue);
+      fill: none;
+      stroke-width: 1.8;
+    }
+    .empty-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .empty-sub {
+      font-size: 0.825rem;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 300px;
+    }
+
+    /* ── LOADING DOTS ── */
+    .loading-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 52px 24px 40px;
+    }
+    .dots {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--blue);
+      animation: dotBounce 1.2s ease-in-out infinite;
+    }
+    .dot:nth-child(1) { animation-delay: 0s; }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dotBounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.35; }
+      40%            { transform: scale(1.1); opacity: 1; }
+    }
+    .loading-text {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    /* ── RESULT ── */
+    .result-wrap { display: none; }
+
+    .platform-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+    .badge-tiktok { background: #111; color: #fff; }
+    .badge-douyin { background: linear-gradient(90deg,#fe2c55,#25f4ee); color: #fff; }
+
+    .result-media {
+      width: 100%;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-height: 400px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      border-radius: 4px;
+    }
+    .result-media img,
+    .result-media video {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .result-info {
+      padding-bottom: 14px;
+      border-bottom: 1.5px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .result-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+    .result-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .dl-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+
+    .dl-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    .dl-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 16px;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      background: var(--light);
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.18s, background 0.18s, transform 0.12s;
+    }
+    .dl-btn:hover {
+      border-color: var(--blue);
+      background: #ddf0fc;
+      transform: translateY(-1px);
+    }
+    .dl-left { display: flex; align-items: center; gap: 12px; }
+    .dl-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .dl-icon svg { width: 18px; height: 18px; }
+    .dl-icon.video { background: var(--blue); }
+    .dl-icon.audio { background: var(--teal); }
+    .dl-icon.image { background: #e05a2b; }
+    .dl-name { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+    .dl-quality { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+    .dl-arrow svg {
+      width: 16px; height: 16px;
+      stroke: var(--blue);
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    footer {
+      text-align: center;
+      padding: 28px 20px 24px;
+      font-size: 0.775rem;
+      color: var(--muted);
+      border-top: 1.5px solid var(--border);
+      margin-top: 20px;
+      background: #ffffff;
+    }
+    footer span { color: var(--blue); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="platform-tags">
+    <span class="tag tag-tt">TikTok</span>
+    <span class="tag tag-dy">Douyin</span>
+  </div>
+  <h1 class="hero-title">Tải Video <span>Không Watermark</span></h1>
+  <p class="hero-sub">Dán link TikTok hoặc Douyin để tải về</p>
+
+  <div class="input-wrap">
+    <input id="urlInput" type="text" placeholder="https://www.tiktok.com/@user/video/..." autocomplete="off"/>
+    <button id="fetchBtn" onclick="fetchMedia()">
+      <span class="btn-spinner" id="btnSpinner"></span>
+      <svg id="btnIcon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Tải xuống
+    </button>
+  </div>
+  <p class="hint">Hỗ trợ: <b>TikTok</b> · <b>Douyin</b></p>
+</div>
+
+<div class="main">
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Empty state -->
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon-wrap">
+      <svg viewBox="0 0 24 24">
+        <polyline points="21 8 21 21 3 21 3 8"/>
+        <rect x="1" y="3" width="22" height="5"/>
+        <line x1="10" y1="12" x2="14" y2="12"/>
+      </svg>
+    </div>
+    <div class="empty-title">Chưa có nội dung nào</div>
+    <div class="empty-sub">Dán link video vào ô phía trên và nhấn <strong>Tải xuống</strong> để bắt đầu</div>
+  </div>
+
+  <!-- Loading dots -->
+  <div class="loading-state" id="loadingState">
+    <div class="dots">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <div class="loading-text">Đang tải liên kết…</div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-wrap" id="resultWrap">
+    <div id="platformBadge"></div>
+    <div class="result-media" id="resultMedia"></div>
+    <div class="result-info">
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-meta" id="resultMeta"></div>
+    </div>
+    <div class="dl-label">Chọn định dạng tải xuống</div>
+    <div class="dl-list" id="dlList"></div>
+  </div>
+</div>
+
+<footer>
+  © 2026 Video Downloader · Made with ❤️ by <span>vtuong</span>
+</footer>
+
+<script>
+const icons = {
+  video: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`,
+  audio: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+  image: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+};
+
+const arrowSvg = `<svg viewBox="0 0 24 24">
+  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+  <polyline points="7 10 12 15 17 10"/>
+  <line x1="12" y1="15" x2="12" y2="3"/>
+</svg>`;
+
+function fmt(n) {
+  if (!n) return '';
+  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return n;
+}
+
+function showError(msg) {
+  const eb = document.getElementById('errorBox');
+  eb.textContent = '⚠️ ' + msg;
+  eb.style.display = 'block';
+  document.getElementById('resultWrap').style.display = 'none';
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'flex';
+}
+function hideError() { document.getElementById('errorBox').style.display = 'none'; }
+
+function setLoading(on) {
+  document.getElementById('fetchBtn').disabled = on;
+  document.getElementById('btnSpinner').style.display = on ? 'block' : 'none';
+  document.getElementById('btnIcon').style.display = on ? 'none' : 'block';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('loadingState').style.display = on ? 'flex' : 'none';
+}
+
+function detectPlatform(url) {
+  if (/tiktok\.com/i.test(url)) return 'tiktok';
+  if (/douyin\.com/i.test(url)) return 'douyin';
+  return null;
+}
+
+async function fetchMedia() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { showError('Vui lòng nhập link video.'); return; }
+
+  const platform = detectPlatform(url);
+  if (!platform) {
+    showError('Link không hợp lệ. Chỉ hỗ trợ TikTok và Douyin.');
+    return;
+  }
+
+  hideError();
+  setLoading(true);
+  document.getElementById('resultWrap').style.display = 'none';
+
+  try {
+    const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`, {
+      signal: AbortSignal.timeout(15000)
+    });
+    if (!res.ok) throw new Error('Không thể kết nối. Thử lại sau.');
+    const json = await res.json();
+    if (!json || json.code !== 0) throw new Error(json?.msg || 'Không tải được. Kiểm tra lại link.');
+    renderResult(json.data, platform);
+  } catch(e) {
+    showError(e.message || 'Đã xảy ra lỗi.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+function renderResult(data, platform) {
+  const wrap    = document.getElementById('resultWrap');
+  const media   = document.getElementById('resultMedia');
+  const titleEl = document.getElementById('resultTitle');
+  const metaEl  = document.getElementById('resultMeta');
+  const dlList  = document.getElementById('dlList');
+  const badge   = document.getElementById('platformBadge');
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('loadingState').style.display = 'none';
+  media.innerHTML = dlList.innerHTML = '';
+
+  badge.innerHTML = platform === 'tiktok'
+    ? `<span class="platform-badge badge-tiktok">TikTok</span>`
+    : `<span class="platform-badge badge-douyin">Douyin</span>`;
+
+  titleEl.textContent = data.title || 'Video không có tiêu đề';
+
+  const author = data.author?.nickname || data.author?.unique_id || '';
+  const plays  = data.play_count ? fmt(data.play_count)+' lượt xem' : '';
+  const likes  = data.digg_count ? fmt(data.digg_count)+' ❤️' : '';
+  metaEl.innerHTML = [
+    author ? `<span>👤 ${author}</span>` : '',
+    plays  ? `<span>▶ ${plays}</span>` : '',
+    likes  ? `<span>${likes}</span>` : '',
+  ].filter(Boolean).join('');
+
+  const isImg = data.images && data.images.length > 0;
+  if (isImg) {
+    const img = document.createElement('img');
+    img.src = data.images[0]; img.alt = 'preview';
+    media.appendChild(img);
+  } else if (data.play || data.hdplay) {
+    const vid = document.createElement('video');
+    vid.src = data.hdplay || data.play || '';
+    vid.controls = true; vid.playsInline = true; vid.preload = 'metadata';
+    media.appendChild(vid);
+  }
+
+  const items = [];
+  if (!isImg) {
+    if (data.hdplay) items.push({ href: data.hdplay, name: 'Video HD – Không watermark', q: 'Chất lượng cao', t: 'video', f: 'video_hd.mp4' });
+    if (data.play && data.play !== data.hdplay) items.push({ href: data.play, name: 'Video SD – Không watermark', q: 'Chất lượng chuẩn', t: 'video', f: 'video_sd.mp4' });
+    if (data.music) items.push({ href: data.music, name: 'Âm thanh (MP3)', q: 'Audio only', t: 'audio', f: 'audio.mp3' });
+  } else {
+    data.images.forEach((u,i) => items.push({ href:u, name:`Ảnh ${i+1}`, q:'JPG / PNG', t:'image', f:`image_${i+1}.jpg` }));
+    if (data.music) items.push({ href: data.music, name: 'Âm thanh (MP3)', q: 'Audio only', t: 'audio', f: 'audio.mp3' });
+  }
+
+  if (items.length === 0) {
+    dlList.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;padding:12px 0;">Không tìm thấy file tải xuống.</div>';
+  } else {
+    items.forEach(d => {
+      const a = document.createElement('a');
+      a.className = 'dl-btn';
+      a.href = d.href;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.download = d.f;
+      a.innerHTML = `
+        <div class="dl-left">
+          <div class="dl-icon ${d.t}">${icons[d.t]||icons.video}</div>
+          <div class="dl-text">
+            <div class="dl-name">${d.name}</div>
+            <div class="dl-quality">${d.q}</div>
+          </div>
+        </div>
+        <div class="dl-arrow">${arrowSvg}</div>`;
+      dlList.appendChild(a);
+    });
+  }
+
+  wrap.style.display = 'block';
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') fetchMedia();
+});
+</script>
+</body>
+</html>
