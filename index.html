@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>LRC Maker</title>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --blue:#007AFF;
+  --blue-bg:#EAF3FF;
+  --bg:#F2F5F9;
+  --card:#FFF;
+  --border:#DDE3ED;
+  --text:#0D1117;
+  --t2:#5A6575;
+  --t3:#A0AABB;
+  --green:#22C55E;
+  --red:#EF4444;
+  --r:5px;
+  --bar:72px;
+}
+
+html,body{height:100%}
+
+body{
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  background:var(--bg);
+  font-family:-apple-system,'Helvetica Neue',Helvetica,sans-serif;
+  color:var(--text);
+  font-size:14px;
+  overflow:hidden;
+}
+
+/* scrollable main column */
+.main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:12px 11px;
+  padding-bottom:calc(var(--bar) + env(safe-area-inset-bottom) + 10px);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* card */
+.card{background:var(--card);border-radius:var(--r);box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden;flex-shrink:0}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:9px 12px 0}
+.clabel{font-size:9.5px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--t3)}
+.cbody{padding:8px 12px 12px}
+
+/* audio */
+.upload-row{display:flex;align-items:center;gap:8px;padding:8px 12px 0}
+.ulabel{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:var(--blue);color:#fff;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+.ulabel:active{opacity:.75}
+.ulabel input{display:none}
+.fname{flex:1;font-size:11.5px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seek-row{display:flex;align-items:center;gap:8px;padding:7px 12px 11px}
+.tlbl{font-size:10.5px;font-weight:600;color:var(--t2);font-variant-numeric:tabular-nums;white-space:nowrap;min-width:78px;text-align:right}
+input[type=range]{flex:1;-webkit-appearance:none;height:3px;border-radius:2px;background:var(--border);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--blue);box-shadow:0 1px 5px rgba(0,122,255,.38)}
+
+/* textarea */
+textarea{width:100%;min-height:90px;padding:9px 10px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--bg);font-family:inherit;font-size:13px;color:var(--text);resize:vertical;outline:none;transition:border-color .2s;line-height:1.55}
+textarea:focus{border-color:var(--blue);background:#fff}
+.pbtn{margin-top:8px;width:100%;padding:10px;background:var(--blue-bg);color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.pbtn:active{background:var(--blue);color:#fff}
+
+/* ── LYRIC LIST ── */
+.lcard{flex:1 1 0;min-height:220px;display:flex;flex-direction:column;overflow:hidden}
+.lscroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 0;scroll-behavior:smooth}
+
+.ll{display:flex;align-items:flex-start;gap:8px;padding:6px 12px;transition:background .18s}
+.ll .ts{font-size:10px;font-weight:700;color:var(--t3);font-variant-numeric:tabular-nums;white-space:nowrap;padding-top:3px;min-width:56px;flex-shrink:0;font-family:'Menlo',monospace;transition:color .18s}
+.ll .tx{flex:1;font-size:14px;color:var(--t3);line-height:1.5;transition:all .18s}
+
+/* done */
+.ll.done .ts{color:var(--blue)}
+.ll.done .tx{color:var(--t2)}
+
+/* active — BIG blue highlighted */
+.ll.active{background:rgba(0,122,255,.09);border-radius:var(--r);margin:2px 6px;padding:9px 8px}
+.ll.active .ts{color:var(--blue)}
+.ll.active .tx{font-size:19px;font-weight:700;color:var(--blue);letter-spacing:-.2px}
+
+/* next — visible preview */
+.ll.next .tx{font-size:15px;font-weight:500;color:var(--t2)}
+.ll.next .ts{color:var(--t3)}
+
+/* progress inside lyric card */
+.prow{display:flex;align-items:center;gap:8px;padding:7px 12px 0}
+.pt{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.pf{height:100%;background:var(--blue);border-radius:2px;transition:width .3s}
+
+/* result */
+.rscroll{height:108px;overflow-y:auto;margin:6px 12px 0;padding:7px 9px;background:#F7F9FC;border:1px solid var(--border);border-radius:var(--r);font-family:'Menlo','Courier New',monospace;font-size:11px;color:var(--t2);line-height:1.9;white-space:pre-wrap;word-break:break-all;scroll-behavior:smooth}
+.rts{color:var(--blue);font-weight:700}
+.rtx{color:var(--text)}
+.ract{display:flex;gap:8px;padding:8px 12px 11px}
+.abtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 6px;border:none;border-radius:var(--r);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.abtn:active{transform:scale(.96);opacity:.8}
+.abtn.cp{background:var(--blue-bg);color:var(--blue);border:1px solid var(--border)}
+.abtn.dl{background:var(--green);color:#fff}
+
+/* bottom bar */
+.bar{position:fixed;bottom:0;left:0;right:0;height:calc(var(--bar) + env(safe-area-inset-bottom));background:rgba(255,255,255,.95);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom));z-index:100;box-shadow:0 -2px 14px rgba(0,0,0,.07)}
+.bbtn{display:flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:var(--r);font-weight:700;cursor:pointer;transition:transform .12s;flex-shrink:0}
+.bbtn:active{transform:scale(.9)}
+.bbtn:disabled{opacity:.3;pointer-events:none}
+.bplay{width:52px;height:52px;background:var(--blue-bg);color:var(--blue);border:1.5px solid var(--border)}
+.bundo{width:52px;height:52px;background:#FFF4F4;color:var(--red);border:1.5px solid #FFD8D8}
+.bstamp{flex:1;height:52px;background:var(--blue);color:#fff;font-size:16px;letter-spacing:.5px;box-shadow:0 4px 18px rgba(0,122,255,.32)}
+
+/* toast */
+.toast{position:fixed;bottom:calc(var(--bar) + env(safe-area-inset-bottom) + 10px);left:50%;transform:translateX(-50%) translateY(10px);background:#1A1D23;color:#fff;padding:8px 18px;border-radius:var(--r);font-size:12px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:200;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="main">
+
+  <!-- AUDIO -->
+  <div class="card">
+    <div class="ch">
+      <span class="clabel">Âm nhạc</span>
+      <span class="tlbl" id="tdis">0:00 / 0:00</span>
+    </div>
+    <div class="upload-row">
+      <label class="ulabel">
+        <i data-lucide="music" style="width:13px;height:13px"></i>
+        Chọn file
+        <input type="file" id="audioFile" accept="audio/*">
+      </label>
+      <span class="fname" id="fname">Chưa chọn file nhạc</span>
+    </div>
+    <div class="seek-row">
+      <input type="range" id="seekBar" min="0" max="100" value="0" step="0.1">
+    </div>
+  </div>
+
+  <!-- LYRIC INPUT -->
+  <div class="card" id="inputCard">
+    <div class="ch"><span class="clabel">Lời bài hát</span></div>
+    <div class="cbody">
+      <textarea id="lyricsInput" placeholder="Dán lời bài hát vào đây…&#10;Hỗ trợ file .lrc cũ (timestamp tự động bị xoá)"></textarea>
+      <button class="pbtn" id="parseBtn">Phân tích &amp; Bắt đầu đồng bộ</button>
+    </div>
+  </div>
+
+  <!-- LYRIC LIST -->
+  <div class="card lcard" id="lyricCard" hidden>
+    <div class="ch">
+      <span class="clabel">Danh sách lời</span>
+      <span id="progLbl" style="font-size:10.5px;font-weight:700;color:var(--t2)"></span>
+    </div>
+    <div class="prow"><div class="pt"><div class="pf" id="pf" style="width:0%"></div></div></div>
+    <div class="lscroll" id="lscroll"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="card" id="resultCard" hidden>
+    <div class="ch">
+      <span class="clabel">Kết quả LRC</span>
+      <span id="rlbl" style="font-size:10.5px;font-weight:700;color:var(--blue)"></span>
+    </div>
+    <div class="rscroll" id="rscroll"><span style="color:var(--t3)">Chưa có dữ liệu…</span></div>
+    <div class="ract">
+      <button class="abtn cp" id="copyBtn">
+        <i data-lucide="clipboard" style="width:13px;height:13px"></i>Sao chép
+      </button>
+      <button class="abtn dl" id="dlBtn">
+        <i data-lucide="download" style="width:13px;height:13px"></i>Tải .lrc
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bar">
+  <button class="bbtn bundo" id="undoBtn" disabled title="Hoàn tác">
+    <i data-lucide="undo-2" style="width:20px;height:20px"></i>
+  </button>
+  <button class="bbtn bplay" id="playBtn" disabled title="Play / Pause">
+    <i data-lucide="play" id="playIcon" style="width:22px;height:22px"></i>
+  </button>
+  <button class="bbtn bstamp" id="stampBtn" disabled>
+    <i data-lucide="timer" style="width:18px;height:18px"></i>
+    GẮN MỐC
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+<audio id="audioEl"></audio>
+
+<script>
+lucide.createIcons();
+
+const $ = id => document.getElementById(id);
+
+const audioEl   = $('audioEl'),  audioFile = $('audioFile'), fname = $('fname');
+const playBtn   = $('playBtn'),  playIcon  = $('playIcon');
+const seekBar   = $('seekBar'),  tdis      = $('tdis');
+const lyricsInput=$('lyricsInput'), parseBtn=$('parseBtn');
+const inputCard = $('inputCard'), lyricCard=$('lyricCard'), lscroll=$('lscroll');
+const pf        = $('pf'),       progLbl   = $('progLbl');
+const resultCard= $('resultCard'),rscroll   = $('rscroll'), rlbl=$('rlbl');
+const copyBtn   = $('copyBtn'),  dlBtn     = $('dlBtn');
+const stampBtn  = $('stampBtn'), undoBtn   = $('undoBtn');
+const toastEl   = $('toast');
+
+// ── STATE ──
+let lines=[], stamps=[], cur=0, playing=false, ready=false;
+
+// ── HELPERS ──
+const fmtTS = s => {
+  const m=Math.floor(s/60).toString().padStart(2,'0');
+  const ss=Math.floor(s%60).toString().padStart(2,'0');
+  const cs=Math.floor((s%1)*100).toString().padStart(2,'0');
+  return `[${m}:${ss}.${cs}]`;
+};
+const fmtD = s => { s=isNaN(s)?0:s; return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`; };
+const stripTS = r => r.replace(/\[\d{2}:\d{2}[.:]\d{2,3}\]/g,'');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+let _tt;
+function toast(msg,ms=1700){
+  toastEl.textContent=msg;
+  toastEl.classList.add('show');
+  clearTimeout(_tt);
+  _tt=setTimeout(()=>toastEl.classList.remove('show'),ms);
+}
+function haptic(){try{navigator.vibrate&&navigator.vibrate(28)}catch(_){}}
+
+// ── AUDIO ──
+audioFile.addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  audioEl.src=URL.createObjectURL(f);
+  fname.textContent=f.name;
+  ready=false; playBtn.disabled=true;
+});
+audioEl.addEventListener('loadedmetadata',()=>{
+  ready=true; seekBar.max=audioEl.duration;
+  updateTime(); playBtn.disabled=false; syncBtns();
+});
+audioEl.addEventListener('timeupdate',()=>{ if(!seekBar._drag)seekBar.value=audioEl.currentTime; updateTime(); });
+audioEl.addEventListener('ended',()=>setPlay(false));
+
+function updateTime(){
+  tdis.textContent=`${fmtD(audioEl.currentTime)} / ${fmtD(audioEl.duration)}`;
+}
+seekBar.addEventListener('pointerdown',()=>seekBar._drag=true);
+seekBar.addEventListener('pointerup',  ()=>seekBar._drag=false);
+seekBar.addEventListener('input',()=>{ audioEl.currentTime=+seekBar.value; updateTime(); });
+
+playBtn.addEventListener('click',()=>{ haptic(); playing?doPause():doPlay(); });
+function doPlay(){ audioEl.play().catch(()=>{}); setPlay(true); }
+function doPause(){ audioEl.pause(); setPlay(false); }
+function setPlay(v){
+  playing=v;
+  const ico=v?'pause':'play';
+  playIcon.setAttribute('data-lucide',ico);
+  lucide.createIcons({nodes:[playIcon]});
+}
+
+// ── PARSE ──
+parseBtn.addEventListener('click',()=>{
+  const raw=lyricsInput.value.trim();
+  if(!raw){toast('⚠️ Hãy nhập lời bài hát!');return;}
+  const arr=stripTS(raw).split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!arr.length){toast('Không tìm thấy dòng nào');return;}
+
+  lines=arr; stamps=arr.map(()=>null); cur=0;
+
+  inputCard.style.display='none';
+  lyricCard.hidden=false;
+  resultCard.hidden=false;
+
+  renderList();
+  renderResult();
+  updateProg();
+  syncBtns();
+  toast(`✅ ${arr.length} dòng — Nhấn ▶ rồi GẮN MỐC`);
+});
+
+// ── STAMP ──
+stampBtn.addEventListener('click',doStamp);
+function doStamp(){
+  if(!ready||cur>=lines.length)return;
+  haptic();
+  stamps[cur]=fmtTS(audioEl.currentTime);
+  cur++;
+  renderList(); renderResult(); updateProg(); syncBtns();
+  if(cur>=lines.length) toast('🎉 Hoàn thành! Tải hoặc sao chép kết quả.',3000);
+}
+
+// ── UNDO — lùi index, xoá stamp, nhạc vẫn chạy ──
+undoBtn.addEventListener('click',doUndo);
+function doUndo(){
+  if(cur===0)return;
+  haptic();
+  cur--;
+  stamps[cur]=null;
+  renderList(); renderResult(); updateProg(); syncBtns();
+  toast('↩ Đã hoàn tác — tua lại và gắn mốc lại!');
+}
+
+// ── RENDER LYRIC LIST ──
+function renderList(){
+  lscroll.innerHTML='';
+  lines.forEach((txt,i)=>{
+    const div=document.createElement('div');
+    let cls='ll';
+    if(i<cur)           cls+=' done';
+    else if(i===cur)    cls+=' active';
+    else if(i===cur+1)  cls+=' next';
+    div.className=cls;
+
+    const tsEl=document.createElement('span');
+    tsEl.className='ts';
+    tsEl.textContent=stamps[i]||'';
+
+    const txEl=document.createElement('span');
+    txEl.className='tx';
+    txEl.textContent=txt;
+
+    div.append(tsEl,txEl);
+    lscroll.appendChild(div);
+  });
+
+  // căn dòng active vào giữa container dùng getBoundingClientRect (chính xác nhất)
+  const activeEl=lscroll.querySelector('.ll.active');
+  if(activeEl){
+    const boxRect  = lscroll.getBoundingClientRect();
+    const elRect   = activeEl.getBoundingClientRect();
+    // khoảng cách hiện tại từ top element đến top container
+    const elRelTop = elRect.top - boxRect.top;
+    // muốn dòng active nằm ở 35% từ trên → vẫn thấy dòng tiếp theo bên dưới
+    const desired  = lscroll.clientHeight * 0.35 - activeEl.offsetHeight / 2;
+    lscroll.scrollBy({ top: elRelTop - desired, behavior: 'smooth' });
+  }
+}
+
+// ── RENDER RESULT ──
+function renderResult(){
+  const done=stamps.map((ts,i)=>ts?ts+lines[i]:null).filter(Boolean);
+  if(!done.length){
+    rscroll.innerHTML='<span style="color:var(--t3)">Chưa có dữ liệu…</span>';
+    rlbl.textContent=''; return;
+  }
+  rscroll.innerHTML=done.map(e=>{
+    const m=e.match(/^(\[\d{2}:\d{2}\.\d{2}\])(.*)/s);
+    const ts=m?m[1]:'', tx=m?m[2]:e;
+    return `<span class="rts">${esc(ts)}</span><span class="rtx">${esc(tx)}</span>\n`;
+  }).join('');
+  rscroll.scrollTop=rscroll.scrollHeight;
+  rlbl.textContent=`${done.length} dòng`;
+}
+
+// ── PROGRESS ──
+function updateProg(){
+  const done=stamps.filter(Boolean).length;
+  pf.style.width=(lines.length?done/lines.length*100:0)+'%';
+  progLbl.textContent=`${done} / ${lines.length}`;
+}
+
+// ── BTN STATES ──
+function syncBtns(){
+  stampBtn.disabled=!ready||!lines.length||cur>=lines.length;
+  undoBtn.disabled=cur===0;
+}
+
+// ── OUTPUT ──
+function getContent(){
+  return stamps.map((ts,i)=>ts?ts+lines[i]:null).filter(Boolean).join('\n');
+}
+copyBtn.addEventListener('click',async()=>{
+  haptic();
+  const c=getContent();
+  if(!c){toast('Chưa có dữ liệu');return;}
+  try{await navigator.clipboard.writeText(c);toast('📋 Đã sao chép!');}
+  catch{toast('⚠️ Trình duyệt chặn clipboard');}
+});
+dlBtn.addEventListener('click',()=>{
+  haptic();
+  const c=getContent();
+  if(!c){toast('Chưa có dữ liệu');return;}
+  const a=Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(new Blob([c],{type:'text/plain;charset=utf-8'})),
+    download:'output.lrc'
+  });
+  a.click();
+  toast('💾 Đang tải file…');
+});
+
+// ── KEYBOARD ──
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='TEXTAREA')return;
+  if(e.code==='Space'){e.preventDefault();doStamp();}
+  if(e.code==='Backspace'){e.preventDefault();doUndo();}
+  if(e.code==='KeyP'){playing?doPause():doPlay();}
+});
+</script>
+</body>
+</html>
